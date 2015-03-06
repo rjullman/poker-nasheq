@@ -1,0 +1,3 @@
+enum PlayerAction {
+    FOLD, BET;
+}
