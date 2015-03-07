@@ -30,7 +30,7 @@ public class Strategy {
         if (n instanceof ActionNode) {
             ActionNode an = (ActionNode) n;
             Set<PlayerAction> aset = Sets.newHashSet(an.getActions());
-            strategy.put(gt.getInfoSet(an), new Distribution<PlayerAction>(aset));
+            strategy.put(an.getInfoSet(), new Distribution<PlayerAction>(aset));
         }
 
         for (GameNode c : n.getChildren()) {

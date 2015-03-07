@@ -6,7 +6,7 @@ public class ComputeNash {
 
     public static void main (String[] args) {
         PokerGame game = PokerGames.newMHGame();
-        Strategy nash = Strategies.nes(game, 1000);
+        Strategy nash = Strategies.nes(game, 100);
         System.out.println(nash);
     }
     

@@ -3,18 +3,13 @@ import java.util.ArrayList;
 
 public class ActionNode extends SimpleGameNode {
 
-    private final int player;
     private final List<PlayerAction> actions;
     private final List<Double> bets;
 
     public ActionNode(int player) {
-        this.player = player;
+        super(player, true);
         this.actions = new ArrayList<PlayerAction>();
         this.bets = new ArrayList<Double>();
-    }
-
-    public int getPlayer() {
-        return player;
     }
 
     public void addChild(GameNode n, PlayerAction action, double bet) {

@@ -25,6 +25,8 @@ public final class PokerUtils {
     public static int evaluate(List<Card> cards) {
         Collections.sort(cards, Collections.reverseOrder());
 
+        
+
         int maxCount = 1;
         int maxRank = cards.get(0).rank();
         int count = 1;

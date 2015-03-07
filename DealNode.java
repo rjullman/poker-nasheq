@@ -4,7 +4,7 @@ import java.util.ArrayList;
 public class DealNode extends SimpleGameNode {
     public static final int SHARED_CARDS = -1;
 
-    private final int player;
+    private final int forPlayer;
     private final List<List<Card>> deals;
     private final List<Double> freqs;
 
@@ -12,18 +12,23 @@ public class DealNode extends SimpleGameNode {
         this(SHARED_CARDS);
     }
 
-    public DealNode(int player) {
-        this.player = player;
+    public DealNode(int forPlayer) {
+        this(forPlayer, forPlayer == SHARED_CARDS);
+    }
+
+    private DealNode(int forPlayer, boolean publicVis) {
+        super(SimpleGameNode.PLAYER_NATURE, publicVis);
+        this.forPlayer = forPlayer;
         this.deals = new ArrayList<List<Card>>();
         this.freqs = new ArrayList<Double>();
     }
 
     public boolean isHoleCards() {
-        return player != SHARED_CARDS;
+        return forPlayer != SHARED_CARDS;
     }
 
-    public int getPlayer() {
-        return player;
+    public int getForPlayer() {
+        return forPlayer;
     }
 
     public void addChild(GameNode n, List<Card> deal, double freq) {

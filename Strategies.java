@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.common.base.Preconditions;
+
 public class Strategies {
 
     private Strategies() {
@@ -44,68 +46,46 @@ public class Strategies {
 
         List<GameNode> children = n.getChildren();
         if (children.size() == 0) {
-            return n.setPayoff(terminalpayoff(gt, n, strats, rplayer));
+            return n.setPayoff(terminalPayoff(gt, n, strats, rplayer));
         }
 
-        double[] cpayoffs = new double[children.size()];
-        for (int i = 0; i < children.size(); i++) {
-            cpayoffs[i] = payoff(gt, children.get(i), strats, rplayer);
-        }
-
-        double payoff = 0;
-        for (int i = 0; i < cpayoffs.length; i++) {
-            if (n instanceof DealNode) {
-                DealNode dn = (DealNode) n;
-                payoff += cpayoffs[i];
-            } else if (n instanceof ActionNode) {
-                ActionNode an = (ActionNode) n;
-                int player = an.getPlayer();
-                InfoSet iset = gt.getInfoSet(an);
-                Strategy s = strats.get(player);
-                if (player != rplayer) {
-                    payoff += cpayoffs[i];
-                } else if (player == rplayer) {
-                    double[] tpayoffs = new double[cpayoffs.length];
-                    Set<GameNode> nodes = getIndistNodes(gt, n, rplayer);
-                    for (GameNode in : nodes) {
-                        List<GameNode> cs = in.getChildren();
-                        for (int j = 0; j < cs.size(); j++) {
-                            double pf = payoff(gt, cs.get(j), strats, rplayer);
-                            tpayoffs[j] += pf;
-                        }
-                    }
-                    int aindex = Arrays.maxarg(tpayoffs);
-                    s.setAction(iset, an.getAction(aindex));
-                    payoff = cpayoffs[aindex];
-                    break;
-                }
+        InfoSet iset = n.getInfoSet();
+        double[][] cpayoffs = new double[iset.size()][children.size()];
+        double[] tpayoffs = new double[children.size()];
+        for (int i = 0; i < iset.size(); i++) {
+            GameNode in = iset.get(i);
+            List<GameNode> nchildren = in.getChildren();
+            for (int cindex = 0; cindex < nchildren.size(); cindex++) {
+                GameNode child = nchildren.get(cindex);
+                double pf = payoff(gt, child, strats, rplayer);
+                cpayoffs[i][cindex] += pf;
+                tpayoffs[cindex] += pf;
             }
         }
 
-        /*
-         *for (GameNode in : getIndistNodes(gt, n, rplayer)) {
-         *    in.setPayoff(payoff);
-         *}
-         */
+        int player = n.getPlayer();
 
-        return n.setPayoff(payoff);
-    }
-
-    public static Set<GameNode> getIndistNodes(GameTree gt, GameNode n, int rplayer) {
-        Set<GameNode> nodes;
-        if (n instanceof ActionNode) {
+        // compute best action for a responding player
+        int aindex = -1;
+        if (player == rplayer) {
+            Preconditions.checkArgument(n instanceof ActionNode, "responding player must have actions");
             ActionNode an = (ActionNode) n;
-            if (an.getPlayer() == rplayer) {
-                nodes = gt.getInfoSet((ActionNode) n).getNodes();
-                return nodes;
-            }
-        } 
-        nodes = new HashSet<GameNode>();
-        nodes.add(n);
-        return nodes;
+            aindex = Arrays.maxarg(tpayoffs);
+            strats.get(player).setAction(iset, an.getAction(aindex));
+        }
+
+        // set payoffs for all nodes in the information set
+        for (int i = 0; i < iset.size(); i++) {
+            GameNode in = iset.get(i);
+            double payoff = (player == rplayer) 
+                ? cpayoffs[i][aindex] : Arrays.sum(cpayoffs[i]); 
+            in.setPayoff(payoff);
+        }
+
+        return n.getPayoff();
     }
 
-    public static double terminalpayoff(GameTree gt, GameNode n, List<Strategy> strats, int player) {
+    public static double terminalPayoff(GameTree gt, GameNode n, List<Strategy> strats, int player) {
         PokerGame g = gt.getGame();
         double[] bets = new double[g.getNumPlayers()];
         boolean[] fold = new boolean[g.getNumPlayers()];
@@ -125,7 +105,7 @@ public class Strategies {
 
             if (p instanceof DealNode) {
                 DealNode dn = (DealNode) p;
-                int play = dn.getPlayer();
+                int play = dn.getForPlayer();
                 if (dn.isHoleCards()) {
                     holecards.get(play).addAll(dn.getDeal(cindex));
                 } else {
@@ -153,29 +133,32 @@ public class Strategies {
             winnings = pot * take - contr;
         }
 
-        double freq = freqWeight(gt, n, strats, player);
-        return freq * winnings;
+        return freq(n, strats, player) * winnings;
     }
 
-    private static double freqWeight(GameTree gt, GameNode n, List<Strategy> strats, int rplayer) {
+    private static double freq(GameNode n, List<Strategy> strats, int rplayer) {
+        if (n.getFreq() != null) {
+            return n.getFreq();
+        }
+
         GameNode p = n.getParent();
         int cindex = n.getChildIndex();
         if (p == null) {
             return 1.0;
         }
 
-        double freq = 1.0;
+        double f = 1.0;
         if (p instanceof DealNode) {
             DealNode dn = (DealNode) p;
-            freq = dn.getFreq(cindex);
+            f = dn.getFreq(cindex);
         } else if (p instanceof ActionNode) {
             ActionNode an = (ActionNode) p;
             if (an.getPlayer() != rplayer) {
-                InfoSet iset = gt.getInfoSet(an);
-                freq = strats.get(an.getPlayer()).getProb(iset, an.getAction(cindex));
+                InfoSet iset = an.getInfoSet();
+                f = strats.get(an.getPlayer()).getProb(iset, an.getAction(cindex));
             }
         }
-        return freqWeight(gt, p, strats, rplayer) * freq;
+        return n.setFreq(freq(p, strats, rplayer) * f);
     }
 
 }

@@ -1,6 +1,7 @@
 import java.lang.StringBuilder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -56,21 +57,57 @@ public class PokerGame {
     }
 
     public GameTree buildGameTree() { 
-        SimpleGameNode root = new SimpleGameNode();
-        GameTree gt = new GameTree(this, root);
-        root.addChild(buildGameTreeRound(0));
-        buildInfoSets(gt, gt.getRoot());
+        GameNode root = buildGameTreeRound(0);
+        Collection<InfoSet> isets = buildInfoSets(root, Maps.newHashMap());
+        GameTree gt = new GameTree(this, root, isets);
         return gt;
     }
 
-    private void buildInfoSets(GameTree gt, GameNode n) {
+    private Collection<InfoSet> buildInfoSets(GameNode n, Map<String, InfoSet> isetsByLabel) {
+        int player = n.getPlayer();
+
+        // add node to infoset
+        String label = getLabel(n, player);
+        InfoSet iset = new InfoSet(n.toString() + label);
         if (n instanceof ActionNode) {
-            ActionNode an = (ActionNode) n;
-            gt.addToInfoSet(an);
+            iset = isetsByLabel.containsKey(label) ? isetsByLabel.get(label) : new InfoSet(label);
+            isetsByLabel.put(label, iset);
         }
-        for (GameNode c : n.getChildren()) {
-            buildInfoSets(gt, c);
+        iset.add(n);
+        n.setInfoSet(iset);
+
+        // recursively add children to their infosets
+        List<GameNode> children = n.getChildren();
+        for (int cindex = 0; cindex < children.size(); cindex++) {
+            buildInfoSets(children.get(cindex), isetsByLabel);
         }
+
+        return isetsByLabel.values();
+    }
+
+    private String getLabel(GameNode n, int player) {
+        return buildLabel(n, player, new StringBuilder()).toString();
+    }
+
+    private StringBuilder buildLabel(GameNode n, int player, StringBuilder sb) {
+        GameNode p = n.getParent();
+        if (p == null) {
+            return sb;
+        }
+
+        buildLabel(p, player, sb);
+        int cindex = n.getChildIndex();
+        String cstring = p.getChildString(cindex);
+        if (p.isPublic() || player == SimpleGameNode.PLAYER_NATURE) {
+            sb.append(cstring);
+        } else if (p instanceof DealNode) {
+            DealNode dn = (DealNode) p;
+            if (dn.getForPlayer() == player) {
+                sb.append(cstring);
+            }
+        }
+
+        return sb;
     }
 
     private GameNode buildGameTreeRound(int rindex) {
@@ -175,9 +212,6 @@ public class PokerGame {
                 deal.add(c);
                 int count = countMaxRankCards(deal);
                 double freq = sfreq * (size / (deck.remaining() * 1.0)) * ((deck.count(c) * 1.0) / count);
-                /*
-                 *double freq = sfreq * (size / (deck.size() - size + 1.0)) * ((deck.suits() - count + 1.0) / count);
-                 */
                 deals.put(deal, freq);
             }
 

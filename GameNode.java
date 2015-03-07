@@ -13,8 +13,15 @@ public interface GameNode {
     public Double getPayoff();
     public Double setPayoff(Double payoff);
 
+    public Double getFreq();
+    public Double setFreq(Double freq);
+
     public InfoSet getInfoSet();
     public void setInfoSet(InfoSet iset);
+
+    public int getPlayer();
+
+    public boolean isPublic();
 
     public String getChildString(int cindex);
 

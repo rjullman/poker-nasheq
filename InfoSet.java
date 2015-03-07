@@ -1,32 +1,27 @@
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
+
+import com.google.common.collect.Lists;
 
 public class InfoSet implements Iterable<GameNode> {
 
-    private final String name;
-    private final int player;
-    private final Set<GameNode> nodes;
+    private final String label;
+    private final List<GameNode> nodes;
 
-    public InfoSet(String name, int player) {
-        this.name = name;
-        this.player = player;
-        this.nodes = new HashSet<GameNode>();
+    public InfoSet(String label) {
+        this.label = label;
+        this.nodes = Lists.newArrayList();
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getPlayer() {
-        return player;
+    public String getLabel() {
+        return label;
     }
 
     public int size() {
         return nodes.size();
     }
 
-    public Set<GameNode> getNodes() {
+    public List<GameNode> getNodes() {
         return nodes;
     }
 
@@ -34,14 +29,16 @@ public class InfoSet implements Iterable<GameNode> {
         return nodes.add(n);
     }
 
+    public GameNode get(int i) {
+        return nodes.get(i);
+    }
+
     public Iterator<GameNode> iterator() {
         return nodes.iterator();
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("p").append(player).append(' ').append(name);
-        return sb.toString();
+        return "   " + label;
     }
 
 }
