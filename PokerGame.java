@@ -65,8 +65,57 @@ public class PokerGame {
         return numPlayers;
     }
 
+    private class GameState {
+        private final Evaluator eval;
+        private final int numPlayers;
+
+        public double[] bets;
+        public double[] antes;
+        public boolean[] folds;
+        public List<List<Card>> holeCards;
+        public List<Card> sharedCards;
+
+        public GameState(Evaluator eval, int numPlayers) {
+            this.eval = eval;
+            this.numPlayers = numPlayers;
+            bets = new double[numPlayers];
+            folds = new boolean[numPlayers];
+            holeCards = Lists.newArrayList();
+            for (int i = 0; i < numPlayers; i++) {
+                holeCards.add(Lists.newArrayList());
+            }
+            sharedCards = Lists.newArrayList();
+        }
+
+        public PayoffNode buildPayoffNode() {
+            GameResult result = eval.result(holeCards, sharedCards, folds);
+            double pot = Arrays.sum(bets);
+            double[] payoffs = new double[numPlayers];
+            for (int i = 0; i < numPlayers; i++) {
+                payoffs[i] = pot * result.getShareOfPotForPlayer(i) - bets[i];
+            }
+            return new PayoffNode(payoffs);
+        }
+
+        public void addCards(int player, List<Card> deal) {
+            if (player == DealNode.SHARED_CARDS) {
+                sharedCards.addAll(deal);
+            } else {
+                holeCards.get(player).addAll(deal);
+            }
+        }
+
+        public void removeCards(int player, List<Card> deal) {
+            if (player == DealNode.SHARED_CARDS) {
+                sharedCards.removeAll(deal);
+            } else {
+                holeCards.get(player).removeAll(deal);
+            }
+        }
+    }
+
     public GameTree buildGameTree() { 
-        GameNode root = buildGameTreeRound(0);
+        GameNode root = buildGameTreeRound(new GameState(getEvaluator(), getNumPlayers()), 0);
         Collection<InfoSet> isets = buildInfoSets(root, Maps.newHashMap());
         GameTree gt = new GameTree(this, root, isets);
         return gt;
@@ -119,61 +168,76 @@ public class PokerGame {
         return sb;
     }
 
-    private GameNode buildGameTreeRound(int rindex) {
+    private GameNode buildGameTreeRound(GameState state, int rindex) {
         if (rindex >= rounds.length) {
-            return new SimpleGameNode();
+            return state.buildPayoffNode();
+        } else {
+            Round r = rounds[rindex];
+            for (int i = 0; i < getNumPlayers(); i++) {
+                if (!state.folds[i]) {
+                    state.bets[i] += r.getAnte();
+                }
+            }
+            GameNode node = buildDealNodes(state, rindex);
+            for (int i = 0; i < getNumPlayers(); i++) {
+                if (!state.folds[i]) {
+                    state.bets[i] -= r.getAnte();
+                }
+            }
+            return node;
         }
-        return buildDealNodes(rindex);
     }
 
-    private GameNode buildDealNodes(int rindex) {
-        return buildHoleDealNode(rindex, 0);
+    private GameNode buildDealNodes(GameState state, int rindex) {
+        return buildHoleDealNode(state, rindex, 0);
     }
 
-    private GameNode buildDealNode(int rindex, int player) {
+    private GameNode buildDealNode(GameState state, int rindex, int player) {
         Round r = rounds[rindex];
         boolean holeCards = (player != DealNode.SHARED_CARDS);
         int numCards = holeCards ? r.getNumHoleCards() : r.getNumSharedCards();
 
         if (player >= numPlayers || numCards == 0) {
-            return holeCards ? buildSharedDealNode(rindex) : buildActionNodes(rindex);
+            return holeCards ? buildSharedDealNode(state, rindex) : buildActionNodes(state, rindex);
         }
 
         DealNode dn = new DealNode(player);
         Map<List<Card>, Double> dealsFreqMap = makeAllDeals(deck, numCards);
         for (List<Card> deal : dealsFreqMap.keySet()) {
+            state.addCards(player, deal);
             for (Card c : deal) {
                 deck.draw(c);
             }
-            GameNode child = holeCards ? buildHoleDealNode(rindex, player + 1) : buildActionNodes(rindex);
+            GameNode child = holeCards ? buildHoleDealNode(state, rindex, player + 1) : buildActionNodes(state, rindex);
             dn.addChild(child, deal, dealsFreqMap.get(deal));
             for (Card c : deal) {
                 deck.replace(c);
             }
+            state.removeCards(player, deal);
         }
         return dn;
     }
 
-    private GameNode buildHoleDealNode(int rindex, int player) {
-        return buildDealNode(rindex, player);
+    private GameNode buildHoleDealNode(GameState state, int rindex, int player) {
+        return buildDealNode(state, rindex, player);
     }
 
-    private GameNode buildSharedDealNode(int rindex) {
-        return buildDealNode(rindex, DealNode.SHARED_CARDS);
+    private GameNode buildSharedDealNode(GameState state, int rindex) {
+        return buildDealNode(state, rindex, DealNode.SHARED_CARDS);
     }
 
-    private GameNode buildActionNodes(int rindex) {
-        return buildActionNode(rindex, 0, 0, 0, 0);
+    private GameNode buildActionNodes(GameState state, int rindex) {
+        return buildActionNode(state, rindex, 0, 0, 0);
     }
 
-    private GameNode buildActionNode(int rindex, int player, int round, double maxBet, int numFolds) {
-        if (numFolds + 1 == numPlayers) {
-            return new SimpleGameNode();
+    private GameNode buildActionNode(GameState state, int rindex, int player, int round, double maxBet) {
+        if (Arrays.sum(state.folds) + 1 == numPlayers) {
+            return state.buildPayoffNode();
         }
 
         Round r = rounds[rindex];
         if (round >= r.getMaxBetsPerPlayer()) {
-            return buildGameTreeRound(rindex + 1);
+            return buildGameTreeRound(state, rindex + 1);
         }
 
         ActionNode an = new ActionNode(player);
@@ -181,12 +245,16 @@ public class PokerGame {
         int nextRound = (nextPlayer != 0) ? round : round + 1;
         for (double bet : r.getBets()) {
             if (bet >= maxBet) {
-                GameNode betChild = buildActionNode(rindex, nextPlayer, nextRound, bet, numFolds);
+                state.bets[player] += bet;
+                GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound, bet);
                 an.addChild(betChild, PlayerAction.BET, bet);
+                state.bets[player] -= bet;
             }
         }
-        GameNode foldChild = buildActionNode(rindex, nextPlayer, nextRound, maxBet, numFolds + 1);
+        state.folds[player] = true;
+        GameNode foldChild = buildActionNode(state, rindex, nextPlayer, nextRound, maxBet);
         an.addFoldChild(foldChild);
+        state.folds[player] = false;
         return an;
     }
 

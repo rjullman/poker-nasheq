@@ -46,7 +46,7 @@ public class Strategies {
 
         List<GameNode> children = n.getChildren();
         if (children.size() == 0) {
-            return n.setPayoff(terminalPayoff(gt, n, strats, rplayer));
+            return n.setPayoff(terminalPayoff(n, strats, rplayer));
         }
 
         InfoSet iset = n.getInfoSet();
@@ -85,55 +85,10 @@ public class Strategies {
         return n.getPayoff();
     }
 
-    public static double terminalPayoff(GameTree gt, GameNode n, List<Strategy> strats, int player) {
-        PokerGame g = gt.getGame();
-        double[] bets = new double[g.getNumPlayers()];
-        boolean[] fold = new boolean[g.getNumPlayers()];
-        double pot = 0;
-        List<Card> sharedcards = new ArrayList<Card>();
-        List<List<Card>> holecards = new ArrayList<List<Card>>();
-        for (int i = 0; i < g.getNumPlayers(); i++) {
-            holecards.add(new ArrayList<Card>());
-            bets[i] = 1;
-            pot += 1;
-        }
-
-        GameNode p = n;
-        while (p.getParent() != null) {
-            int cindex = p.getChildIndex();
-            p = p.getParent();
-
-            if (p instanceof DealNode) {
-                DealNode dn = (DealNode) p;
-                int play = dn.getForPlayer();
-                if (dn.isHoleCards()) {
-                    holecards.get(play).addAll(dn.getDeal(cindex));
-                } else {
-                    sharedcards.addAll(dn.getDeal(cindex));
-                }
-            } else if (p instanceof ActionNode) {
-                ActionNode an = (ActionNode) p;
-                fold[an.getPlayer()] = (an.getAction(cindex) == PlayerAction.FOLD);
-                bets[an.getPlayer()] += an.getBet(cindex);
-                pot += an.getBet(cindex);
-            }
-        }
-
-        double winnings = 0;
-        double contr = bets[player];
-        boolean fp = fold[player];
-        boolean fo = fold[1 - player];
-        assert (fp == false || fo == false);
-        if (fp) {
-            winnings = -contr;
-        } else if (fo) {
-            winnings = pot - contr;
-        } else {
-            double take = g.getEvaluator().result(holecards, sharedcards).getShareOfPotForPlayer(player);
-            winnings = pot * take - contr;
-        }
-
-        return freq(n, strats, player) * winnings;
+    public static double terminalPayoff(GameNode n, List<Strategy> strats, int player) {
+        Preconditions.checkArgument(n instanceof PayoffNode, "terminal node must be a PayoffNode");
+        double payoff = ((PayoffNode) n).getPayoffForPlayer(player);
+        return freq(n, strats, player) * payoff;
     }
 
     private static double freq(GameNode n, List<Strategy> strats, int rplayer) {

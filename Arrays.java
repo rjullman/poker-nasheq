@@ -22,4 +22,12 @@ public class Arrays {
         return s;
     }
 
+    public static int sum(boolean[] a) {
+        int s = 0;
+        for (boolean b : a) {
+            if (b) { s++; }
+        }
+        return s;
+    }
+
 }

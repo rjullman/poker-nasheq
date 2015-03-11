@@ -66,23 +66,51 @@ public class FourCardEvaluator implements Evaluator {
         }
     }
 
-    public GameResult result(List<List<Card>> holeCards, List<Card> sharedCards) {
-        List<Hand> hands = buildHands(holeCards, sharedCards);
-        Collections.sort(hands, Collections.reverseOrder());
+    public GameResult result(List<List<Card>> holeCards, List<Card> sharedCards, boolean[] folds) {
+        int numPlayers = holeCards.size();
+        int numFolds = Arrays.sum(folds);
+
         Set<Integer> winners = Sets.newHashSet();
-        for (Hand hand : hands) {
-            if (hand.value == hands.get(0).value) {
-                winners.add(hand.player);
-            } else {
-                break;
+        if (numFolds + 1 < numPlayers) {
+            List<Hand> hands = buildHands(holeCards, sharedCards, folds);
+            Collections.sort(hands, Collections.reverseOrder());
+            for (Hand hand : hands) {
+                if (hand.value == hands.get(0).value) {
+                    winners.add(hand.player);
+                } else {
+                    break;
+                }
+            }
+        } else {
+            for (int i = 0; i < numPlayers; i++) {
+                if (!folds[i]) {
+                    winners.add(i);
+                    break;
+                }
             }
         }
-        return new GameResult(winners);
+
+        double[] shares = new double[holeCards.size()];
+        for (int player : winners) {
+            shares[player] = 1.0 / winners.size();
+        }
+
+        /*
+         *System.out.println("CARDS:\t" + holeCards + " " + sharedCards);
+         *System.out.println("FOLD:\t" + folds[0] + " " + folds[1]);
+         *System.out.println("SHARES:\t" + shares[0] + " " + shares[1]);
+         *System.out.println("----");
+         */
+
+        return new GameResult(shares);
     }
 
-    private static List<Hand> buildHands(List<List<Card>> holeCards, List<Card> sharedCards) {
+    private static List<Hand> buildHands(List<List<Card>> holeCards, List<Card> sharedCards, boolean[] folds) {
         List<Hand> hands = Lists.newArrayList();
         for (int player = 0; player < holeCards.size(); player++) {
+            if (folds[player]) { 
+                continue;
+            }
             List<Card> cards = Lists.newArrayList(holeCards.get(player));
             for (Card c : sharedCards) {
                 cards.add(c);
