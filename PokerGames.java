@@ -7,7 +7,8 @@ public class PokerGames {
     public static PokerGame newMHGame() {
         Deck deck = new Deck(5,4);
         int numPlayers = 2;
-        PokerGame.Builder builder = PokerGame.newBuilder(deck, numPlayers);
+        PokerGame.Builder builder =
+            PokerGame.newBuilder(deck, new FourCardEvaluator(), numPlayers);
         Round r1 = Round.newBuilder()
                         .noSharedCards()
                         .setNumHoleCards(2)

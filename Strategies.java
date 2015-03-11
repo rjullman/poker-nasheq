@@ -129,7 +129,7 @@ public class Strategies {
         } else if (fo) {
             winnings = pot - contr;
         } else {
-            double take = PokerUtils.winner(holecards.get(player), holecards.get(1 - player), sharedcards);
+            double take = g.getEvaluator().result(holecards, sharedcards).getShareOfPotForPlayer(player);
             winnings = pot * take - contr;
         }
 

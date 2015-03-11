@@ -14,18 +14,22 @@ import com.google.common.collect.Maps;
 
 public class PokerGame {
     private final Deck deck;
+    private final Evaluator evaluator;
     private final int numPlayers;
     private final Round[] rounds;
 
     public static class Builder {
         private final Deck deck;
+        private final Evaluator evaluator;
         private int numPlayers;
         List<Round> rounds;
 
-        private Builder(Deck deck, int numPlayers) {
+        private Builder(Deck deck, Evaluator evaluator, int numPlayers) {
             Preconditions.checkNotNull(deck);
+            Preconditions.checkNotNull(evaluator);
             Preconditions.checkArgument(numPlayers > 0, "the game must have player");
             this.deck = deck;
+            this.evaluator = evaluator;
             this.numPlayers = numPlayers;
             this.rounds = Lists.newArrayList();
         }
@@ -38,18 +42,23 @@ public class PokerGame {
 
         public PokerGame build() {
             Preconditions.checkArgument(rounds.size() != 0, "the game must have at least 1 round");
-            return new PokerGame(deck, numPlayers, Iterables.toArray(rounds, Round.class));
+            return new PokerGame(deck, evaluator, numPlayers, Iterables.toArray(rounds, Round.class));
         }
     }
 
-    public static Builder newBuilder(Deck d, int numPlayers) {
-        return new Builder(d, numPlayers);
+    public static Builder newBuilder(Deck d, Evaluator e, int numPlayers) {
+        return new Builder(d, e, numPlayers);
     }
 
-    public PokerGame(Deck deck, int numPlayers, Round[] rounds) {
+    public PokerGame(Deck deck, Evaluator evaluator, int numPlayers, Round[] rounds) {
         this.deck = deck;
+        this.evaluator = evaluator;
         this.numPlayers = numPlayers;
         this.rounds = rounds;
+    }
+    
+    public Evaluator getEvaluator() {
+        return evaluator;
     }
 
     public int getNumPlayers() {
