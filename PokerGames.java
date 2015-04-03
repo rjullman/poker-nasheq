@@ -30,26 +30,26 @@ public class PokerGames {
         Round r1 = Round.newBuilder()
                         .noSharedCards()
                         .setNumHoleCards(2)
-                        .setMaxBetsPerPlayer(2)
+                        .setMaxBetsPerPlayer(1)
                         .setAnte(1.0)
-                        .addBetOption(4.0)
-                        .canCheck(canCheck)
-                        .build();
-        Round r2 = Round.newBuilder()
-                        .noHoleCards()
-                        .setNumSharedCards(2)
-                        .setMaxBetsPerPlayer(2)
-                        .noAnte()
                         .addBetOption(4.0)
                         .canCheck(canCheck)
                         .build();
         /*
          *Round r2 = Round.newBuilder()
-         *                .noBetting()
          *                .noHoleCards()
          *                .setNumSharedCards(2)
+         *                .setMaxBetsPerPlayer(2)
+         *                .noAnte()
+         *                .addBetOption(4.0)
+         *                .canCheck(canCheck)
          *                .build();
          */
+        Round r2 = Round.newBuilder()
+                        .noBetting()
+                        .noHoleCards()
+                        .setNumSharedCards(2)
+                        .build();
         return builder.addRound(r1).addRound(r2).build();
     }
 

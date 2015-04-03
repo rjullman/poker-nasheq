@@ -130,9 +130,11 @@ public class PokerGame {
     }
 
     public GameTree buildGameTree() { 
+        c = 0;
         GameNode root = buildGameTreeRound(new GameState(getEvaluator(), getNumPlayers()), 0);
         Collection<InfoSet> isets = buildInfoSets(root, Maps.newHashMap());
         GameTree gt = new GameTree(this, root, isets);
+        System.out.println(c);
         return gt;
     }
 
@@ -183,7 +185,10 @@ public class PokerGame {
         return sb;
     }
 
+    private static int c = 0;
+
     private GameNode buildGameTreeRound(GameState state, int rindex) {
+        c++;
         if (rindex >= rounds.length) {
             return state.buildPayoffNode();
         } else {
@@ -208,6 +213,7 @@ public class PokerGame {
     }
 
     private GameNode buildDealNode(GameState state, int rindex, int player) {
+        c++;
         Round r = rounds[rindex];
         boolean holeCards = (player != DealNode.SHARED_CARDS);
         int numCards = holeCards ? r.getNumHoleCards() : r.getNumSharedCards();
@@ -246,6 +252,7 @@ public class PokerGame {
     }
 
     private GameNode buildActionNode(GameState state, int rindex, int player, int round) {
+        c++;
         if (Arrays.sum(state.folds) + 1 == numPlayers) {
             return state.buildPayoffNode();
         }

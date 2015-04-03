@@ -12,13 +12,17 @@ import com.google.common.collect.Sets;
 public class ComputeNash {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("usage: javac ComputeNash [output prefix]");
+        if (args.length < 3) {
+            System.err.println("usage: javac ComputeNash [1st coll player] [2nd coll player] [output prefix]");
             System.exit(1);
         }
 
+        int p1 = Integer.parseInt(args[0]);
+        int p2 = Integer.parseInt(args[1]);
+        int p3 = 3 - p1 - p2;
+
         double epsilon = 0.1;
-        Set<Integer> team = Sets.newHashSet(1,2);
+        Set<Integer> team = Sets.newHashSet(p1,p2);
         PokerGame gcol = PokerGames.newMHZeroSumCollusionGame(3, false, team);
         GameTree gtcol = gcol.buildGameTree();
         Strategy scol = Strategies.nes(gtcol, epsilon);
@@ -27,10 +31,10 @@ public class ComputeNash {
         GameTree gtnocol = gnocol.buildGameTree();
         Strategy snocol = Strategies.nes(gtnocol, epsilon);
 
-        Strategy smixedcol = buildStrategy(gtcol, scol, snocol, 0);
-        Strategy smixednocol = buildStrategy(gtcol, snocol, scol, 0);
+        Strategy smixedcol = buildStrategy(gtcol, scol, snocol, p3);
+        Strategy smixednocol = buildStrategy(gtcol, snocol, scol, p3);
 
-        String pathPrefix = args[0];
+        String pathPrefix = args[2];
         writeToFile(pathPrefix + "-no-collusion.nash", snocol.toString());
         writeToFile(pathPrefix + "-collusion.nash", scol.toString());
         writeToFile(pathPrefix + "-mixed-no-collusion.nash", smixednocol.toString());
@@ -38,6 +42,7 @@ public class ComputeNash {
 
         StringBuffer summary = new StringBuffer();
         summary.append(epsilon).append(" max regret\n")
+               .append('p').append(p1).append(" and p").append(p2).append(" versus p").append(p3).append('\n')
                .append("no collusion\n")
                .append(getExpectedPayoffsStr(gtnocol, snocol))
                .append("collusion\n")
