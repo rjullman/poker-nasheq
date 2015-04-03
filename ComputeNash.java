@@ -1,3 +1,7 @@
+import java.io.PrintWriter;
+
+import java.lang.StringBuffer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,42 +11,48 @@ import com.google.common.collect.Sets;
 
 public class ComputeNash {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            System.err.println("usage: javac ComputeNash [output prefix]");
+            System.exit(1);
+        }
+
         double epsilon = 0.1;
         Set<Integer> team = Sets.newHashSet(1,2);
-        PokerGame game = PokerGames.newMHZeroSumCollusionGame(3, false, team);
-        /*
-         *PokerGame game = PokerGames.newMHGame(3, false);
-         */
+        PokerGame gcol = PokerGames.newMHZeroSumCollusionGame(3, false, team);
+        GameTree gtcol = gcol.buildGameTree();
+        Strategy scol = Strategies.nes(gtcol, epsilon);
 
-        GameTree gt = game.buildGameTree();
-        Strategy nash = Strategies.nes(gt, epsilon);
+        PokerGame gnocol = PokerGames.newMHGame(3, false);
+        GameTree gtnocol = gnocol.buildGameTree();
+        Strategy snocol = Strategies.nes(gtnocol, epsilon);
 
-        PokerGame g2 = PokerGames.newMHGame(3, false);
-        GameTree gt2 = g2.buildGameTree();
-        Strategy nash2 = Strategies.nes(gt2, epsilon);
-        Strategy s = buildStrategy(gt, nash, nash2, 0);
+        Strategy smixedcol = buildStrategy(gtcol, scol, snocol, 0);
+        Strategy smixednocol = buildStrategy(gtcol, snocol, scol, 0);
 
-        System.out.println(epsilon + " max regret");
-        /*
-         *System.out.println(nash);
-         */
-        System.out.println("Collusion");
-        System.out.println(nash);
-        System.out.println("No Collusion");
-        System.out.println(nash2);
-        System.out.println("Mixed");
-        System.out.println(s);
-        System.out.println("Collusion");
-        printExpectedPayoffs(gt, nash);
-        System.out.println("No Collusion");
-        printExpectedPayoffs(gt2, nash2);
-        System.out.println("Mixed");
-        printExpectedPayoffs(gt, s);
+        String pathPrefix = args[0];
+        writeToFile(pathPrefix + "-no-collusion.nash", snocol.toString());
+        writeToFile(pathPrefix + "-collusion.nash", scol.toString());
+        writeToFile(pathPrefix + "-mixed-no-collusion.nash", smixednocol.toString());
+        writeToFile(pathPrefix + "-mixed-collusion.nash", smixedcol.toString());
 
-        /*
-         *printExpectedPayoffs(PokerGames.newMHZeroSumCollusionGame(3, false, team).buildGameTree(), nash);
-         */
+        StringBuffer summary = new StringBuffer();
+        summary.append(epsilon).append(" max regret\n")
+               .append("no collusion\n")
+               .append(getExpectedPayoffsStr(gtnocol, snocol))
+               .append("collusion\n")
+               .append(getExpectedPayoffsStr(gtcol, scol))
+               .append("mixed (no collusion)\n")
+               .append(getExpectedPayoffsStr(gtnocol, smixednocol))
+               .append("mixed (collusion)\n")
+               .append(getExpectedPayoffsStr(gtcol, smixedcol));
+        writeToFile(pathPrefix + "-summary.payoffs", summary.toString());
+    }
+
+    public static void writeToFile(String path, String str) throws Exception {
+        PrintWriter writer = new PrintWriter(path, "UTF-8");
+        writer.println(str);
+        writer.close();
     }
 
     public static Strategy buildStrategy(GameTree gt, Strategy s1, Strategy s2, int player) {
@@ -65,11 +75,13 @@ public class ComputeNash {
         }
     }
 
-    public static void printExpectedPayoffs(GameTree gt, Strategy s) {
+    public static String getExpectedPayoffsStr(GameTree gt, Strategy s) {
+        StringBuffer sb = new StringBuffer();
         double[] epayoffs = Strategies.expectedPayoffs(gt, s);
         for (int p = 0; p < gt.getGame().getNumPlayers(); p++) {
-            System.out.println("expected payoff for player " + p + " is " + epayoffs[p]);
+            sb.append("expected payoff for player ").append(p).append(" is ").append(epayoffs[p]).append('\n');
         }
+        return sb.toString();
     }
     
 }
