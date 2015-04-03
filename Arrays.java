@@ -14,6 +14,10 @@ public class Arrays {
         return m;
     }
 
+    public static double max(double[] a) {
+        return a[maxarg(a)];
+    }
+
     public static double sum(double[] a) {
         double s = 0;
         for (double d : a) {

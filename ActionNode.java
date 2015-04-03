@@ -12,7 +12,7 @@ public class ActionNode extends SimpleGameNode {
         this.bets = new ArrayList<Double>();
     }
 
-    public void addChild(GameNode n, PlayerAction action, double bet) {
+    public void addChild(GameNode n, PlayerAction action, Double bet) {
         super.addChild(n);
         actions.add(action);
         bets.add(bet);
@@ -23,24 +23,29 @@ public class ActionNode extends SimpleGameNode {
     }
 
     public void addFoldChild(GameNode n) {
-        addChild(n, PlayerAction.FOLD, 0);
+        addChild(n, PlayerAction.FOLD, null);
     }
 
     public PlayerAction getAction(int i) {
         return actions.get(i);
     }
 
-    public List<PlayerAction> getActions() {
-        return actions;
+    public List<Double> getBets() {
+        return bets;
     }
 
-    public double getBet(int i) {
+    public Double getBet(int i) {
         return bets.get(i);
     }
 
     public String getChildString(int cindex) {
         StringBuilder sb = new StringBuilder();
-        sb.append('[').append(getAction(cindex)).append(']');
+        PlayerAction a = getAction(cindex);
+        sb.append('[').append(getPlayer()).append(a);
+        if (a == PlayerAction.BET) {
+            sb.append('(').append(getBet(cindex)).append(')');
+        }
+        sb.append(']');
         return sb.toString();
     }
 

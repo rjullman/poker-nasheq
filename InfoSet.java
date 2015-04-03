@@ -38,7 +38,24 @@ public class InfoSet implements Iterable<GameNode> {
     }
 
     public String toString() {
-        return "   " + label;
+        return label;
     }
+
+    @Override  
+    public boolean equals(Object obj) {  
+        if (obj == null) {  
+            return false;  
+        }  
+        if (getClass() != obj.getClass()) {  
+            return false;  
+        }  
+        final InfoSet other = (InfoSet) obj;  
+        return com.google.common.base.Objects.equal(this.label, other.label);
+    }
+
+    @Override  
+    public int hashCode() {  
+        return com.google.common.base.Objects.hashCode(this.label);  
+    } 
 
 }

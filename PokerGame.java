@@ -48,9 +48,7 @@ public class PokerGame {
 
     public static Builder newBuilder(Deck d, Evaluator e, int numPlayers) {
         return new Builder(d, e, numPlayers);
-    }
-
-    public PokerGame(Deck deck, Evaluator evaluator, int numPlayers, Round[] rounds) {
+    } public PokerGame(Deck deck, Evaluator evaluator, int numPlayers, Round[] rounds) {
         this.deck = deck;
         this.evaluator = evaluator;
         this.numPlayers = numPlayers;
@@ -70,7 +68,6 @@ public class PokerGame {
         private final int numPlayers;
 
         public double[] bets;
-        public double[] antes;
         public boolean[] folds;
         public List<List<Card>> holeCards;
         public List<Card> sharedCards;
@@ -88,13 +85,31 @@ public class PokerGame {
         }
 
         public PayoffNode buildPayoffNode() {
-            GameResult result = eval.result(holeCards, sharedCards, folds);
-            double pot = Arrays.sum(bets);
-            double[] payoffs = new double[numPlayers];
-            for (int i = 0; i < numPlayers; i++) {
-                payoffs[i] = pot * result.getShareOfPotForPlayer(i) - bets[i];
+            return new PayoffNode(eval.payoffs(holeCards, sharedCards, bets, folds));
+        }
+
+        public double getMaxPlayerContrib() {
+            return Arrays.max(bets);
+        }
+
+        public int prevPlayer(int curPlayer) {
+            for (int i = 0; i < numPlayers; i--) {
+                int player = (curPlayer - i - 1 + numPlayers) % numPlayers;
+                if (!folds[player]) {
+                    return player;
+                }
             }
-            return new PayoffNode(payoffs);
+            throw new IllegalStateException();
+        }
+
+        public int nextPlayer(int curPlayer) {
+            for (int i = 0; i < numPlayers; i++) {
+                int player = (i + curPlayer + 1) % numPlayers;
+                if (!folds[player]) {
+                    return player;
+                }
+            }
+            throw new IllegalStateException();
         }
 
         public void addCards(int player, List<Card> deal) {
@@ -227,10 +242,10 @@ public class PokerGame {
     }
 
     private GameNode buildActionNodes(GameState state, int rindex) {
-        return buildActionNode(state, rindex, 0, 0, 0);
+        return buildActionNode(state, rindex, 0, 0);
     }
 
-    private GameNode buildActionNode(GameState state, int rindex, int player, int round, double maxBet) {
+    private GameNode buildActionNode(GameState state, int rindex, int player, int round) {
         if (Arrays.sum(state.folds) + 1 == numPlayers) {
             return state.buildPayoffNode();
         }
@@ -241,18 +256,23 @@ public class PokerGame {
         }
 
         ActionNode an = new ActionNode(player);
-        int nextPlayer = (player + 1 < numPlayers) ? player + 1 : 0;
-        int nextRound = (nextPlayer != 0) ? round : round + 1;
+        int nextPlayer = state.nextPlayer(player);
+        int prevPlayer = state.prevPlayer(player);
+        int nextRound = (nextPlayer > player) ? round : round + 1;
+        boolean noRaises = (round + 1 == r.getMaxBetsPerPlayer()) && (prevPlayer < player);
+        double maxContrib = state.getMaxPlayerContrib();
         for (double bet : r.getBets()) {
-            if (bet >= maxBet) {
-                state.bets[player] += bet;
-                GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound, bet);
-                an.addChild(betChild, PlayerAction.BET, bet);
-                state.bets[player] -= bet;
+            if (bet + state.bets[player] >= maxContrib) {
+                if (!noRaises || (bet + state.bets[player]) == maxContrib) {
+                    state.bets[player] += bet;
+                    GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound);
+                    an.addChild(betChild, PlayerAction.BET, bet);
+                    state.bets[player] -= bet;
+                }
             }
         }
         state.folds[player] = true;
-        GameNode foldChild = buildActionNode(state, rindex, nextPlayer, nextRound, maxBet);
+        GameNode foldChild = buildActionNode(state, rindex, nextPlayer, nextRound);
         an.addFoldChild(foldChild);
         state.folds[player] = false;
         return an;
@@ -284,6 +304,7 @@ public class PokerGame {
                 if (!deck.canDraw(c)) {
                     continue;
                 }
+                c = deck.card(r, deck.suits() - deck.count(c));
 
                 List<Card> deal = Lists.newArrayList(sdeal);
                 deal.add(c);

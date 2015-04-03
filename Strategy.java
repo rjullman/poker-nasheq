@@ -3,6 +3,7 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -15,10 +16,10 @@ import com.google.common.collect.Sets;
 
 public class Strategy {
 
-    private final HashMap<InfoSet, Distribution<PlayerAction>> strategy;
+    private final HashMap<InfoSet, Distribution<Double>> strategy;
 
     public Strategy(GameTree gt) {
-        this.strategy = new HashMap<InfoSet, Distribution<PlayerAction>>();
+        this.strategy = new HashMap<InfoSet, Distribution<Double>>();
         init(gt, gt.getRoot());
     }
 
@@ -29,8 +30,8 @@ public class Strategy {
 
         if (n instanceof ActionNode) {
             ActionNode an = (ActionNode) n;
-            Set<PlayerAction> aset = Sets.newHashSet(an.getActions());
-            strategy.put(an.getInfoSet(), new Distribution<PlayerAction>(aset));
+            Set<Double> bset = Sets.newHashSet(an.getBets());
+            strategy.put(an.getInfoSet(), new Distribution<Double>(bset));
         }
 
         for (GameNode c : n.getChildren()) {
@@ -38,12 +39,27 @@ public class Strategy {
         }
     }
 
-    public double getProb(InfoSet iset, PlayerAction a) {
-        return strategy.get(iset).get(a);
+    public Distribution<Double> getDist(InfoSet iset) {
+        return strategy.get(iset);
     }
 
-    public void setAction(InfoSet iset, PlayerAction a) {
-        strategy.get(iset).unilaterally(a);
+    public void setDist(InfoSet iset, Distribution<Double> dist) {
+        strategy.put(iset, dist);
+    }
+
+    public double getProb(InfoSet iset, Double d) {
+        try {
+            return strategy.get(iset).get(d);
+        } catch (Exception e) {
+            System.out.println(this);
+            System.out.println(d + " " + iset);
+            System.out.println(strategy.get(iset));
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setAction(InfoSet iset, Double d) {
+        strategy.get(iset).unilaterally(d);
     }
 
     public void average(Strategy s, double w) {
@@ -55,6 +71,7 @@ public class Strategy {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        Formatter formatter = new Formatter(sb);
         List<InfoSet> isets = Lists.newArrayList(strategy.keySet());
         Collections.sort(isets, new Comparator<InfoSet>() {
             public int compare(InfoSet s1, InfoSet s2) {
@@ -62,8 +79,9 @@ public class Strategy {
             }
         });
         for (InfoSet iset : isets) {
-            sb.append(iset).append(":\t\t").append(strategy.get(iset)).append('\n');
+            formatter.format("%-60s %s\n", iset, strategy.get(iset));
         }
+        sb.setLength(sb.length() - 1);
         return sb.toString();
     }
 

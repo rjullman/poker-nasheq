@@ -54,6 +54,11 @@ public class Round {
             return this;
         }
 
+        public Builder noAnte() {
+            ante = 0.0;
+            return this;
+        }
+
         public Builder noBetting() {
             canCheck = false;
             maxBetsPerPlayer = 0;

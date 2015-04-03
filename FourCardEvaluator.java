@@ -66,7 +66,7 @@ public class FourCardEvaluator implements Evaluator {
         }
     }
 
-    public GameResult result(List<List<Card>> holeCards, List<Card> sharedCards, boolean[] folds) {
+    public double[] payoffs(List<List<Card>> holeCards, List<Card> sharedCards, double[] bets, boolean[] folds) {
         int numPlayers = holeCards.size();
         int numFolds = Arrays.sum(folds);
 
@@ -90,19 +90,15 @@ public class FourCardEvaluator implements Evaluator {
             }
         }
 
-        double[] shares = new double[holeCards.size()];
-        for (int player : winners) {
-            shares[player] = 1.0 / winners.size();
+        double pot = Arrays.sum(bets);
+        double[] payoffs = new double[holeCards.size()];
+        for (int p = 0; p < numPlayers; p++) {
+            payoffs[p] = -bets[p];
+            if (winners.contains(p)) {
+                payoffs[p] += (1.0 / winners.size()) * pot;
+            }
         }
-
-        /*
-         *System.out.println("CARDS:\t" + holeCards + " " + sharedCards);
-         *System.out.println("FOLD:\t" + folds[0] + " " + folds[1]);
-         *System.out.println("SHARES:\t" + shares[0] + " " + shares[1]);
-         *System.out.println("----");
-         */
-
-        return new GameResult(shares);
+        return payoffs;
     }
 
     private static List<Hand> buildHands(List<List<Card>> holeCards, List<Card> sharedCards, boolean[] folds) {

@@ -1,4 +1,6 @@
 public class Card implements Comparable<Card> {
+    private static final String CARD_NAMES = "23456789TJQKA";
+
     private final int rank;
     private final int suit;
 
@@ -16,7 +18,7 @@ public class Card implements Comparable<Card> {
     }
 
     public String toString() {
-        return Integer.toString(rank);
+        return Character.toString(CARD_NAMES.charAt(rank));
         /*
          *return "(" + rank + "," + suit + ")";
          */
