@@ -1,0 +1,19 @@
+0.01 max regret
+p0 and p1 versus p2
+no collusion
+expected payoff for player 0 is -0.09050262180872495
+expected payoff for player 1 is 0.002797609524848102
+expected payoff for player 2 is 0.0877050122838769
+collusion
+expected payoff for player 0 is 0.030482399910033
+expected payoff for player 1 is 0.030482399910033
+expected payoff for player 2 is -0.060964799820066
+mixed (no collusion)
+expected payoff for player 0 is -0.08224460883864324
+expected payoff for player 1 is 0.026611539963912762
+expected payoff for player 2 is 0.05563306887473043
+mixed (collusion)
+expected payoff for player 0 is 0.035783042583547364
+expected payoff for player 1 is 0.035783042583547364
+expected payoff for player 2 is -0.07156608516709473
+
