@@ -49,7 +49,6 @@ public class Strategies {
         }
 
         ForkJoinPool exec = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-
         int numPlayers = gt.getGame().getNumPlayers();
         double[] epayoffs = new double[numPlayers];
         for (int p = 0; p < numPlayers; p++) {
@@ -63,13 +62,8 @@ public class Strategies {
         Strategy s = new Strategy(gt);
         PokerGame game = gt.getGame();
         IterState state = new IterState(game.getNumPlayers());
-        int iter = 0;
-
-        /*
-         *List<InfoSet> isets = Lists.newArrayList(gt.getInfoSets());
-         */
-
         ForkJoinPool exec = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+        int iter = 0;
 
         while (state.getMaxRegret() >= epsilon) {
             iter++;
@@ -107,22 +101,6 @@ public class Strategies {
         state.setMaxRegret(maxRegret);
         return response;
     }
-/*
- *
- *    private static double payoff(GameTree gt, GameNode n, List<Strategy> strats, int rplayer, boolean compBestResp) {
- *        ForkJoinPool exec = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
- *        Future<Double> future = exec.submit(new Callable<Double>() {
- *            public Double call() throws Exception {
- *                return payoff(gt, n, strats, rplayer, compBestResp, exec);
- *            }
- *        });
- *        try {
- *            return future.get();
- *        } catch (Exception e) {
- *            throw Throwables.propagate(e);
- *        }
- *    }
- */
 
     public static class PayoffTask extends RecursiveTask<Double> {
         private final GameTree gt;
