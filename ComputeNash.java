@@ -7,34 +7,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class ComputeNash {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3) {
-            System.err.println("usage: javac ComputeNash [1st coll player] [2nd coll player] [output prefix]");
+        if (args.length < 4) {
+            System.err.println("usage: javac ComputeNash [1st coll player] [2nd coll player] [epsilon cutoff] [output prefix]");
             System.exit(1);
         }
+
+/*
+ *        double epsilon = Double.parseDouble(args[2]);
+ *        PokerGame game = PokerGames.newMMHGame(2);
+ *        GameTree gt = game.buildGameTree();
+ *        Strategy s = Strategies.nes(gt, epsilon);
+ *
+ *        String pathPrefix = args[3];
+ *        writeToFile(pathPrefix + ".nash", s.toString());
+ *
+ *        StringBuffer summary = new StringBuffer();
+ *        summary.append(epsilon).append(" max regret\n")
+ *               .append(getExpectedPayoffsStr(gt, s));
+ *        writeToFile(pathPrefix + "-summary.payoffs", summary.toString());
+ */
 
         int p1 = Integer.parseInt(args[0]);
         int p2 = Integer.parseInt(args[1]);
         int p3 = 3 - p1 - p2;
 
-        double epsilon = 0.1;
+        double epsilon = Double.parseDouble(args[2]);
         Set<Integer> team = Sets.newHashSet(p1,p2);
-        PokerGame gcol = PokerGames.newMHZeroSumCollusionGame(3, false, team);
+        PokerGame gcol = PokerGames.newMMHCollGame(3, team, false);
         GameTree gtcol = gcol.buildGameTree();
         Strategy scol = Strategies.nes(gtcol, epsilon);
 
-        PokerGame gnocol = PokerGames.newMHGame(3, false);
+        PokerGame gnocol = PokerGames.newMMHGame(3);
         GameTree gtnocol = gnocol.buildGameTree();
         Strategy snocol = Strategies.nes(gtnocol, epsilon);
 
         Strategy smixedcol = buildStrategy(gtcol, scol, snocol, p3);
-        Strategy smixednocol = buildStrategy(gtcol, snocol, scol, p3);
+        Strategy smixednocol = buildStrategy(gtnocol, snocol, scol, p3);
 
-        String pathPrefix = args[2];
+        String pathPrefix = args[3];
         writeToFile(pathPrefix + "-no-collusion.nash", snocol.toString());
         writeToFile(pathPrefix + "-collusion.nash", scol.toString());
         writeToFile(pathPrefix + "-mixed-no-collusion.nash", smixednocol.toString());

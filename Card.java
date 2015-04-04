@@ -32,4 +32,22 @@ public class Card implements Comparable<Card> {
         return rank - other.rank();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Card other = (Card) obj;
+        return com.google.common.base.Objects.equal(this.rank, other.rank)
+            && com.google.common.base.Objects.equal(this.suit, other.suit);
+    }
+
+    @Override
+    public int hashCode() {
+        return com.google.common.base.Objects.hashCode(this.rank, this.suit);
+    }
+
 }

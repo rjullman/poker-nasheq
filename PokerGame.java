@@ -11,17 +11,20 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class PokerGame {
     private final Deck deck;
     private final Evaluator evaluator;
     private final int numPlayers;
+    private final Set<Integer> collPlayers;
     private final Round[] rounds;
 
     public static class Builder {
         private final Deck deck;
         private final Evaluator evaluator;
         private int numPlayers;
+        Set<Integer> collPlayers;
         List<Round> rounds;
 
         private Builder(Deck deck, Evaluator evaluator, int numPlayers) {
@@ -31,6 +34,7 @@ public class PokerGame {
             this.deck = deck;
             this.evaluator = evaluator;
             this.numPlayers = numPlayers;
+            this.collPlayers = Sets.newHashSet();
             this.rounds = Lists.newArrayList();
         }
 
@@ -40,18 +44,26 @@ public class PokerGame {
             return this;
         }
 
+        public Builder addStronglyColludingPlayers(Set<Integer> collPlayers) {
+            this.collPlayers = Sets.newHashSet(collPlayers);
+            return this;
+        }
+
         public PokerGame build() {
             Preconditions.checkArgument(rounds.size() != 0, "the game must have at least 1 round");
-            return new PokerGame(deck, evaluator, numPlayers, Iterables.toArray(rounds, Round.class));
+            return new PokerGame(deck, evaluator, numPlayers, collPlayers, Iterables.toArray(rounds, Round.class));
         }
     }
 
     public static Builder newBuilder(Deck d, Evaluator e, int numPlayers) {
         return new Builder(d, e, numPlayers);
-    } public PokerGame(Deck deck, Evaluator evaluator, int numPlayers, Round[] rounds) {
+    } 
+    
+    public PokerGame(Deck deck, Evaluator evaluator, int numPlayers, Set<Integer> collPlayers, Round[] rounds) {
         this.deck = deck;
         this.evaluator = evaluator;
         this.numPlayers = numPlayers;
+        this.collPlayers = collPlayers;
         this.rounds = rounds;
     }
     
@@ -177,12 +189,17 @@ public class PokerGame {
             sb.append(cstring);
         } else if (p instanceof DealNode) {
             DealNode dn = (DealNode) p;
-            if (dn.getForPlayer() == player) {
+            int forPlayer = dn.getForPlayer();
+            if (forPlayer == player || sameTeam(forPlayer, player)) { 
                 sb.append(cstring);
             }
         }
 
         return sb;
+    }
+
+    private boolean sameTeam(int p1, int p2) {
+        return collPlayers.contains(p1) && collPlayers.contains(p2);
     }
 
     private static int c = 0;

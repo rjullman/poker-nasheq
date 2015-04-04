@@ -12,13 +12,7 @@ public class Distribution<K> {
         dist = new HashMap<K, Double>();
         for (K opt : opts) {
             dist.put(opt, 1.0/opts.size());
-            /*
-             *dist.put(opt, 0.0);
-             */
         }
-        /*
-         *dist.put(opts.iterator().next(), 1.0);
-         */
     }
 
     public double get(K opt) {

@@ -6,25 +6,55 @@ public class PokerGames {
         // uninstantiable untility class
     }
 
-    public static PokerGame newMHGame() {
-        return newMHGame(2, false);
+    // Standard SMH (Simple Mercer Holdem) and MMH (Multiround Mercer Holdem) Games
+    public static PokerGame newSMHGame(int numPlayers) {
+        return initSMHGameBuilder(numPlayers, new FourCardEvaluator()).build();
     }
 
-    public static PokerGame newMHZeroSumCollusionGame(int numPlayers, boolean canCheck, Set<Integer> team) {
+    public static PokerGame newMMHGame(int numPlayers) {
+        return initMMHGameBuilder(numPlayers, new FourCardEvaluator()).build();
+    }
+
+    // Games with weak/strong collusion
+    public static PokerGame newSMHCollGame(int numPlayers, Set<Integer> team, boolean strongColl) {
         Evaluator eval = new CollusionEvaluator(new FourCardEvaluator(), team, true);
-        return newMHGameInternal(numPlayers, canCheck, eval);
+        PokerGame.Builder builder = initSMHGameBuilder(numPlayers, eval);
+        if (strongColl) {
+            builder.addStronglyColludingPlayers(team);
+        }
+        return builder.build();
     }
 
-    public static PokerGame newMHNonZeroSumCollusionGame(int numPlayers, boolean canCheck, Set<Integer> team) {
-        Evaluator eval = new CollusionEvaluator(new FourCardEvaluator(), team, false);
-        return newMHGameInternal(numPlayers, canCheck, eval);
+    public static PokerGame newMMHCollGame(int numPlayers, Set<Integer> team, boolean strongColl) {
+        Evaluator eval = new CollusionEvaluator(new FourCardEvaluator(), team, true);
+        PokerGame.Builder builder = initMMHGameBuilder(numPlayers, eval);
+        if (strongColl) {
+            builder.addStronglyColludingPlayers(team);
+        }
+        return builder.build();
     }
 
-    public static PokerGame newMHGame(int numPlayers, boolean canCheck) {
-        return newMHGameInternal(numPlayers, canCheck, new FourCardEvaluator());
+    // Base constructors
+    private static PokerGame.Builder initSMHGameBuilder(int numPlayers, Evaluator eval) {
+        Deck deck = new Deck(5,4);
+        PokerGame.Builder builder = PokerGame.newBuilder(deck, eval, numPlayers);
+        Round r1 = Round.newBuilder()
+                        .noSharedCards()
+                        .setNumHoleCards(2)
+                        .setMaxBetsPerPlayer(1)
+                        .setAnte(1.0)
+                        .addBetOption(4.0)
+                        .canCheck(false)
+                        .build();
+        Round r2 = Round.newBuilder()
+                        .noBetting()
+                        .noHoleCards()
+                        .setNumSharedCards(2)
+                        .build();
+        return builder.addRound(r1).addRound(r2);
     }
 
-    private static PokerGame newMHGameInternal(int numPlayers, boolean canCheck, Evaluator eval) {
+    private static PokerGame.Builder initMMHGameBuilder(int numPlayers, Evaluator eval) {
         Deck deck = new Deck(5,4);
         PokerGame.Builder builder = PokerGame.newBuilder(deck, eval, numPlayers);
         Round r1 = Round.newBuilder()
@@ -33,7 +63,7 @@ public class PokerGames {
                         .setMaxBetsPerPlayer(2)
                         .setAnte(1.0)
                         .addBetOption(4.0)
-                        .canCheck(canCheck)
+                        .canCheck(false)
                         .build();
         Round r2 = Round.newBuilder()
                         .noHoleCards()
@@ -41,16 +71,9 @@ public class PokerGames {
                         .setMaxBetsPerPlayer(2)
                         .noAnte()
                         .addBetOption(4.0)
-                        .canCheck(canCheck)
+                        .canCheck(false)
                         .build();
-        /*
-         *Round r2 = Round.newBuilder()
-         *                .noBetting()
-         *                .noHoleCards()
-         *                .setNumSharedCards(2)
-         *                .build();
-         */
-        return builder.addRound(r1).addRound(r2).build();
+        return builder.addRound(r1).addRound(r2);
     }
 
     public static PokerGame newNoSuitFourCardHoldem() {
