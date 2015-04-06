@@ -39,7 +39,7 @@ public class ComputeNash {
 
         double epsilon = Double.parseDouble(args[2]);
         Set<Integer> team = Sets.newHashSet(p1,p2);
-        PokerGame gcol = PokerGames.newMMHCollGame(3, team, false);
+        PokerGame gcol = PokerGames.newMMHCollGame(3, team, true);
         GameTree gtcol = gcol.buildGameTree();
         Strategy scol = Strategies.nes(gtcol, epsilon);
 
