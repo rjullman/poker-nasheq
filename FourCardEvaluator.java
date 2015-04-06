@@ -112,26 +112,25 @@ public class FourCardEvaluator implements Evaluator {
             for (Card c : sharedCards) {
                 cards.add(c);
             }
-            List<List<Card>> playerHands = buildPossibleHands(cards, CARDS_PER_HAND);
-            for (List<Card> hand : playerHands) {
+            List<ArrayList<Card>> playerHands = buildPossibleHands(cards, CARDS_PER_HAND);
+            for (ArrayList<Card> hand : playerHands) {
                 hands.add(new Hand(player, hand, evaluate(hand)));
             }
         }
         return hands;
     }
 
-    private static List<List<Card>> buildPossibleHands(List<Card> cards, int size) {
+    private static List<ArrayList<Card>> buildPossibleHands(List<Card> cards, int size) {
         if (size == 0) {
-            List<List<Card>> singleton = Collections.singletonList(new ArrayList<Card>());
-            return singleton;
+            return Collections.singletonList(new ArrayList<Card>());
         }
 
         Preconditions.checkArgument(cards.size() != 0, "not enough cards to make hand of desired size");
-        List<List<Card>> hands = Lists.newArrayList();
+        List<ArrayList<Card>> hands = Lists.newArrayList();
         for (int i = cards.size() - 1; i >= 0; i--) {
             Card c = cards.get(i);
             cards.remove(c);
-            for (List<Card> hand : buildPossibleHands(cards, size - 1)) {
+            for (ArrayList<Card> hand : buildPossibleHands(cards, size - 1)) {
                 hand.add(c);
                 hands.add(hand);
             }
