@@ -122,7 +122,8 @@ public class FourCardEvaluator implements Evaluator {
 
     private static List<List<Card>> buildPossibleHands(List<Card> cards, int size) {
         if (size == 0) {
-            return Collections.singletonList(new ArrayList<Card>());
+            List<List<Card>> singleton = Collections.singletonList(new ArrayList<Card>());
+            return singleton;
         }
 
         Preconditions.checkArgument(cards.size() != 0, "not enough cards to make hand of desired size");
