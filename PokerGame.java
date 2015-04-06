@@ -91,7 +91,7 @@ public class PokerGame {
             folds = new boolean[numPlayers];
             holeCards = Lists.newArrayList();
             for (int i = 0; i < numPlayers; i++) {
-                holeCards.add(Lists.newArrayList());
+                holeCards.add(new ArrayList<Card>());
             }
             sharedCards = Lists.newArrayList();
         }
@@ -144,7 +144,7 @@ public class PokerGame {
     public GameTree buildGameTree() { 
         c = 0;
         GameNode root = buildGameTreeRound(new GameState(getEvaluator(), getNumPlayers()), 0);
-        Collection<InfoSet> isets = buildInfoSets(root, Maps.newHashMap());
+        Collection<InfoSet> isets = buildInfoSets(root, new HashMap<String, InfoSet>());
         GameTree gt = new GameTree(this, root, isets);
         System.out.println(c);
         return gt;
@@ -305,7 +305,7 @@ public class PokerGame {
     private static Map<List<Card>, Double> makeAllDeals(Deck deck, int size) {
         if (size == 0) {
             Map<List<Card>, Double> emptyDeal = Maps.newHashMap();
-            emptyDeal.put(Lists.newArrayList(), 1.0);
+            emptyDeal.put(new ArrayList<Card>(), 1.0);
             return emptyDeal;
         }
 

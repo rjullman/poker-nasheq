@@ -1,5 +1,6 @@
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +122,7 @@ public class FourCardEvaluator implements Evaluator {
 
     private static List<List<Card>> buildPossibleHands(List<Card> cards, int size) {
         if (size == 0) {
-            return Collections.singletonList(Lists.newArrayList());
+            return Collections.singletonList(new ArrayList<Card>());
         }
 
         Preconditions.checkArgument(cards.size() != 0, "not enough cards to make hand of desired size");
@@ -142,7 +143,7 @@ public class FourCardEvaluator implements Evaluator {
     private static int evaluate(List<Card> hand) {
         Map<CardCount, List<Integer>> vtr = buildCountMap(hand);
         List<Integer> kickers = vtr.keySet().contains(CardCount.ONE_CARD) 
-            ? vtr.get(CardCount.ONE_CARD) : Lists.newArrayList();
+            ? vtr.get(CardCount.ONE_CARD) : new ArrayList<Integer>();
         if (vtr.keySet().contains(CardCount.FOUR_CARDS)) {
             return value(HandType.FOUR_OF_A_KIND, vtr.get(CardCount.FOUR_CARDS).get(0), 0, 0, 0);
         } else if (vtr.keySet().contains(CardCount.THREE_CARDS)) {
@@ -185,7 +186,7 @@ public class FourCardEvaluator implements Evaluator {
     private static void addCountToMap(Map<CardCount, List<Integer>> countMap, int count, int rank) {
         CardCount cc = CardCount.ofCount(count);
         if (!countMap.keySet().contains(cc)) {
-            countMap.put(cc, Lists.newArrayList());
+            countMap.put(cc, new ArrayList<Integer>());
         }
         countMap.get(cc).add(rank);
     }
