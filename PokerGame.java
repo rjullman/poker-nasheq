@@ -265,7 +265,7 @@ public class PokerGame {
     }
 
     private GameNode buildActionNodes(GameState state, int rindex) {
-        return buildActionNode(state, rindex, 0, 0);
+        return buildActionNode(state, rindex, state.nextPlayer(numPlayers - 1), 0);
     }
 
     private GameNode buildActionNode(GameState state, int rindex, int player, int round) {
@@ -284,14 +284,26 @@ public class PokerGame {
         int prevPlayer = state.prevPlayer(player);
         int nextRound = (nextPlayer > player) ? round : round + 1;
         boolean noRaises = (round + 1 == r.getMaxBetsPerPlayer()) && (prevPlayer < player);
-        double baseContrib = state.getMaxPlayerContrib() - state.bets[player];
-        for (double extraBet : r.getBets()) {
-            double bet = baseContrib + extraBet;
-            if (!noRaises || extraBet == 0) {
-                state.bets[player] += bet;
-                GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound);
-                an.addChild(betChild, PlayerAction.BET, bet);
-                state.bets[player] -= bet;
+        /*
+         *double baseContrib = state.getMaxPlayerContrib() - state.bets[player];
+         *for (double extraBet : r.getBets()) {
+         *    double bet = baseContrib + extraBet;
+         *    if (!noRaises || extraBet == 0) {
+         *        state.bets[player] += bet;
+         *        GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound);
+         *        an.addChild(betChild, PlayerAction.BET, bet);
+         *        state.bets[player] -= bet;
+         */
+        double maxContrib = state.getMaxPlayerContrib();
+        for (double bet : r.getBets()) {
+            if (bet + state.bets[player] >= maxContrib) {
+                if (!noRaises || (bet + state.bets[player]) == maxContrib) {
+                    state.bets[player] += bet;
+                    GameNode betChild = buildActionNode(state, rindex, nextPlayer, nextRound);
+                    an.addChild(betChild, PlayerAction.BET, bet);
+                    state.bets[player] -= bet;
+                }
+
             }
         }
         state.folds[player] = true;

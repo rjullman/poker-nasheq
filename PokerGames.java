@@ -63,7 +63,7 @@ public class PokerGames {
                         .setMaxBetsPerPlayer(2)
                         .setAnte(1.0)
                         .addBetOption(4.0)
-                        .canCheck(true)
+                        .canCheck(false)
                         .build();
         Round r2 = Round.newBuilder()
                         .noHoleCards()
@@ -71,7 +71,7 @@ public class PokerGames {
                         .setMaxBetsPerPlayer(2)
                         .noAnte()
                         .addBetOption(4.0)
-                        .canCheck(true)
+                        .canCheck(false)
                         .build();
         return builder.addRound(r1).addRound(r2);
     }
